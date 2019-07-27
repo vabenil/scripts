@@ -1,4 +1,4 @@
-#!/usr/bin/python3.7
+#!/usr/bin/env python3
 import i3ipc
 
 i3 = i3ipc.Connection()
@@ -8,11 +8,7 @@ layout = focused.parent.layout
 
 if layout == "splith":
     i3.command("split v")
-    print("Vertical")
 elif layout == "splitv":
     i3.command("split h")
-    print("Horizontal")
 else:
     i3.command("split h")
-    print("Else")
-

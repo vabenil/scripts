@@ -75,9 +75,7 @@ def repeat_last():
     exit( 0 )
 
 
-def scratch_next():
-    focused = tree.find_focused()
-
+def scratchpad_next():
     # Hide window
     if focused.parent.scratchpad_state != "none":
         i3.command("[con_id=%d] scratchpad show" % focused.id)
@@ -93,7 +91,7 @@ def scratch_next():
 
     command = "[con_id=%d] scratchpad show" % next_win.id
 
-    if focused.fullscreen_mode:
+    if is_fullscreen and focused.type != 'workspace':
         command += ", fullscreen toggle"
 
     i3.command(command)
@@ -101,18 +99,24 @@ def scratch_next():
 
 # Focus the first window with x instance
 def focus_instance( instance ):
-    instanced = tree.find_instanced( instance )[0]
+    wins = tree.find_instanced( instance )
     
-    if instanced.parent.scratchpad_state != "none":
-        command = "[instance=%s] scratchpad show" % instance
+    if wins:
+        if wins[0].parent.scratchpad_state != "none":
+            command = "[instance=%s] scratchpad show" % instance
+        else:
+            command = "[instance=%s] focus" % instance
+
+        if is_fullscreen and focused.type != 'workspace':
+            command += ", fullscreen toggle"
+
+        i3.command(command)
+        save_to_reg( "i3-smart-focus --instance %s" % instance )
+
     else:
-        command = "[instance=%s] focus" % instance
+        print("Couldn't find any window instanced as %s" % instance)
+        exit( 1 )
 
-    if focused.fullscreen_mode:
-        command += ", fullscreen toggle"
-
-    i3.command(command)
-    save_to_reg( "i3-smart-focus --instance %s" % instance )
 
 def focus_marked( mark ):
         marked_windows = tree.find_marked(mark)
@@ -126,7 +130,7 @@ def focus_marked( mark ):
         else:
             command = "[con_mark=%s] focus" % mark
 
-        if focused.fullscreen_mode:
+        if is_fullscreen and focused.type != 'workspace':
             command += ", fullscreen toggle"
 
         i3.command(command)
@@ -167,21 +171,22 @@ def focus_last():
     subprocess.run(['i3-focus-last', '--switch'])
 
 def focus_left():
-    win_id = focused.id
-    if is_fullscreen:
-        focus_fullscreen( forward=False )
-    elif is_fterm:
+    win_id = focused.window
+    if is_fterm:
         subprocess.run(['xdotool', 'key', '-window', str(win_id), 'alt+p']) 
+    elif is_fullscreen:
+        focus_fullscreen( forward=False )
     elif is_floating:
         i3.command('focus left')
     else:
         i3.command('focus left')
 
 def focus_right():
-    if is_fullscreen:
-        focus_fullscreen()
-    elif is_fterm:
+    win_id = focused.window
+    if is_fterm:
         subprocess.run(['xdotool', 'key', '-window', str(win_id), 'alt+n']) 
+    elif is_fullscreen:
+        focus_fullscreen()
     elif is_floating:
         i3.command('focus right')
     else:
@@ -220,7 +225,7 @@ if __name__ == '__main__':
         if sys.argv[1][0:2] == "--":
             flag = sys.argv[1][2:]
             target = ''
-            
+
             if flag not in flags:
                 print( "'%s' is not a valid flag" % flag  )
                 print( usage )
@@ -259,7 +264,7 @@ if __name__ == '__main__':
 
     i3 = i3ipc.Connection()
     tree = i3.get_tree()
-    focused = i3.get_tree().find_focused()
+    focused = tree.find_focused()
 
     is_fterm = True if focused.window_instance == "floating_term" else False
     is_floating = True if (focused.floating == "auto_on" or focused.floating == "user_on") else False
@@ -267,8 +272,10 @@ if __name__ == '__main__':
 
 
     if flag:
-        if flag == 'scratchpad-next':
-            scratch_next()
+        if  flag == "fullscreen-next":
+            focus_fullscreen()
+        elif flag == 'scratchpad-next':
+            scratchpad_next()
         elif flag == 'mark':
             focus_marked( target )
         elif flag == 'instance':
