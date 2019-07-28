@@ -1,28 +1,36 @@
 #!/usr/bin/python3.7
 
-# Scroll text to the left
-# First argument is the Shown string length
-# Second argument is the Full string
-# Third argument is the N iteration
-# this is ment to be run in a loop
+"""
+Scroll window title, requires i3 
+
+Created to scroll window title in polybar.
+
+Usage example in a bash script:
+    for i in $(seq 1 100);
+    do
+        script.py 60 $i
+    done
+
+ """
 
 import i3ipc
 import sys
 
+
 argc = len(sys.argv)
 args = sys.argv
 
-
+usage = "Usage:\nscript.py <Max length> <N (First char index)>" 
 if argc < 3:
     print( "Not enough arguments" )
-    print( "Usage:\nscript.py <Max length> <Full string> <N (First char index)>" )
+    print( usage )
     exit( -1 )
 
 try:
     max_len   = int( args[ 1 ] )
     n         = int( args[ 2 ] )
 except ValueError:
-    print( "First and third argument must be integers" ) 
+    print( "First and second arguments must be integers" ) 
     exit ( -1 )
 
 i3 = i3ipc.Connection()

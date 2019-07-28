@@ -2,6 +2,10 @@
 import re
 import subprocess
 
+""""
+Switch between layouts
+"""
+
 # Layouts to switch to
 layouts = [ "us", "ru" ]
 

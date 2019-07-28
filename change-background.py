@@ -1,29 +1,48 @@
 #!/usr/bin/env python3
-import os.path
+import os
+import sys
 import subprocess
 import logging
 
-bg_reg_file_path = "/tmp/current-wallpaper"
+
+"""
+Switch wallpapers from directory
+
+This scripts requires feh to work
+"""
+
+USAGE = "change-background.py [wallpaper directory]"
+
+if len(sys.argv) == 1:
+    # File for saving the current wallpaper
+    bg_reg_file_path = "/tmp/current-wallpaper"
+    # Wallpaper file
+    bg_dir = "/home/vabenil/Pictures/wallpapers"
+elif len(sys.argv) == 2:
+    if type(sys.argv[1]) is str:
+        if os.path.isdir( sys.argv[1] ):
+            # File for saving the current wallpaper
+            bg_reg_file_path = sys.argv[1]
+            # Wallpaper file
+            bg_dir = sys.argv[1]
+        else:
+            print( "%s is not a valid directory" % sys.argv[1] )
+            exit( 1 )
+    else:
+        print( "First argument most be a path" )
+        print( USAGE )
+        exit( 1 )
+
+else:
+    print( "To many arguments" )
+    print( USAGE )
+    exit( 1 )
+
 
 current_bg_index = -1
 
-bg_dir = "/home/vabenil/wallpapers"
-
-if not os.path.isdir( bg_dir ):
-    print( "Wallpaper directory does not exist" )
-    exit( 1 )
-
 backgrounds = [
-    "2_the_long_dark.jpg",
-    "wallpaperPRo.jpg",
-    "scrapping_metal.jpg",
-    "wallpaper_sky_dreams.jpg",
-    "gameboy_anaglyph_3d_102604_1366x768.jpg",
-    "tree_horizon_minimalism_128903_1366x768.jpg",
-    "tree_light_dark_82372_1366x768.jpg",
-    "watching_from_below.jpg",
-    "landscape_art_moon_127187_1366x768.jpg",
-    "wallpaperOPEN.jpeg"
+    f for f in os.listdir(bg_dir) if os.path.isfile(os.path.join(bg_dir, f))
 ]
 
 # Get current background image
