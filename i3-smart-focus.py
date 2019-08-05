@@ -9,6 +9,11 @@ import os.path
 
 REG_FILE_PATH = "/tmp/focus-register"
 
+# Keys to pass to xdotool to focus next|prev tabbed window.
+# If you don't use tabbed you can ignore it, or if you use tmux you could modify it to work with tmux.
+TABBED_FOCUS_NEXT = "alt+n"
+TABBED_FOCUS_PREV = "alt+p"
+
 targets = [
     "left",
     "right",
@@ -175,7 +180,7 @@ def focus_last():
 def focus_left():
     win_id = focused.window
     if is_fterm:
-        subprocess.run(['xdotool', 'key', '-window', str(win_id), 'alt+p']) 
+        subprocess.run(['xdotool', 'key', '-window', str(win_id), TABBED_FOCUS_PREV]) 
     elif is_fullscreen:
         focus_fullscreen( forward=False )
     elif is_floating:
@@ -186,7 +191,7 @@ def focus_left():
 def focus_right():
     win_id = focused.window
     if is_fterm:
-        subprocess.run(['xdotool', 'key', '-window', str(win_id), 'alt+n']) 
+        subprocess.run(['xdotool', 'key', '-window', str(win_id), TABBED_FOCUS_NEXT]) 
     elif is_fullscreen:
         focus_fullscreen()
     elif is_floating:
@@ -263,8 +268,9 @@ if __name__ == '__main__':
     tree = i3.get_tree()
     focused = tree.find_focused()
 
-    is_fterm = True if focused.window_instance == "floating_term" else False
     is_floating = True if (focused.floating == "auto_on" or focused.floating == "user_on") else False
+    # If the windows if floating and using tabbed
+    is_fterm = True if focused.window_class == "tabbed" and is_floating else False
     is_fullscreen = focused.fullscreen_mode
 
 
