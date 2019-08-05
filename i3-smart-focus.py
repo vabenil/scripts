@@ -9,6 +9,9 @@ import os.path
 
 REG_FILE_PATH = "/tmp/focus-register"
 
+# REQUIRED
+# path to this script
+I3_SMART_FOCUS = os.path.abspath(__file__)
 # Keys to pass to xdotool to focus next|prev tabbed window.
 # If you don't use tabbed you can ignore it, or if you use tmux you could modify it to work with tmux.
 TABBED_FOCUS_NEXT = "alt+n"
@@ -78,7 +81,8 @@ def repeat_last():
         reg_file.close()
     
     print( last_fcommand )
-    subprocess.run( last_fcommand )
+    sys.argv = last_fcommand
+    exec( open(I3_SMART_FOCUS).read() )
     exit( 0 )
 
 
@@ -102,7 +106,7 @@ def scratchpad_next():
         command += ", fullscreen toggle"
 
     i3.command(command)
-    save_to_reg( "i3-smart-focus --scratchpad-next" )
+    save_to_reg( "%s --scratchpad-next" % I3_SMART_FOCUS )
 
 # Focus the first window with x instance
 def focus_instance( instance ):
@@ -118,7 +122,7 @@ def focus_instance( instance ):
             command += ", fullscreen toggle"
 
         i3.command(command)
-        save_to_reg( "i3-smart-focus --instance %s" % instance )
+        save_to_reg( "%s --instance %s" % (I3_SMART_FOCUS, instance) )
 
     else:
         print("Couldn't find any window instanced as %s" % instance)
@@ -141,7 +145,7 @@ def focus_marked( mark ):
             command += ", fullscreen toggle"
 
         i3.command(command)
-        save_to_reg( "i3-smart-focus --mark %s" % mark )
+        save_to_reg( "%s --mark %s" % (I3_SMART_FOCUS, mark) )
 
 def focus_fullscreen( forward=True ):
     workspace = focused.workspace()
@@ -233,7 +237,7 @@ if __name__ == '__main__':
                 print( usage )
                 exit( 0 )
             elif flag == 'repeat-last':
-                repeat_last()
+                pass
             elif flag[-4:] != 'next' and flag[-4:] != 'prev':
                 print( "Not enough arguments" )
                 print( usage )
@@ -273,9 +277,10 @@ if __name__ == '__main__':
     is_fterm = True if focused.window_class == "tabbed" and is_floating else False
     is_fullscreen = focused.fullscreen_mode
 
-
     if flag:
-        if  flag == "fullscreen-next":
+        if   flag == "repeat-last":
+            repeat_last()
+        elif flag == "fullscreen-next":
             focus_fullscreen()
         elif flag == 'scratchpad-next':
             scratchpad_next()
