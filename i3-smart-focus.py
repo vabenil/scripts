@@ -138,18 +138,18 @@ def focus_marked( mark ):
 
 def focus_fullscreen( forward=True ):
     workspace = focused.workspace()
-    windows = workspace.leaves()
+    windows = sorted( [ win.id for win in workspace.leaves() ] )
     win_num = len( windows )
 
-    if focused in windows:
-        win_index = windows.index( focused )
+    if focused.id in windows:
+        win_index = windows.index( focused.id )
         
         if forward:
             next_win = windows[ win_index + 1 if win_index != win_num - 1 else 0 ]
         else:
             next_win = windows[ win_index - 1 if win_index != 0 else win_num - 1 ]
 
-        command = "[con_id=%d] focus, fullscreen toggle" % next_win.id
+        command = "[con_id=%d] focus, fullscreen toggle" % next_win
         i3.command( command )
     else:
         print( "Unexpected error" )
@@ -195,22 +195,14 @@ def focus_right():
 def focus_down():
     if is_fullscreen:
         focus_fullscreen( forward=False )
-    elif is_fterm:
-        subprocess.run(['xdotool', 'key', '-window', str(win_id), 'alt+n']) 
-    elif is_floating:
-        i3.command('focus down')
     else:
-        i3.command('focus down')
+        i3.command('focus right')
 
 def focus_up():
     if is_fullscreen:
         focus_fullscreen()
-    elif is_fterm:
-        subprocess.run(['xdotool', 'key', '-window', str(win_id), 'alt+n']) 
-    elif is_floating:
-        i3.command('focus up')
     else:
-        i3.command('focus up')
+        i3.command('focus left')
 
 
 

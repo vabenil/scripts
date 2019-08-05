@@ -32,7 +32,6 @@ elif len(sys.argv) == 2:
         print( "First argument most be a path" )
         print( USAGE )
         exit( 1 )
-
 else:
     print( "To many arguments" )
     print( USAGE )
