@@ -21,6 +21,7 @@ targets = [
 ]
 
 flags = [
+    'help',
     'repeat-last',
     'scratchpad-next',
     'fullscreen-next',
@@ -222,6 +223,9 @@ if __name__ == '__main__':
                 print( "'%s' is not a valid flag" % flag  )
                 print( usage )
                 exit( 1 )
+            elif flag == 'help':
+                print( usage )
+                exit( 0 )
             elif flag == 'repeat-last':
                 repeat_last()
             elif flag[-4:] != 'next' and flag[-4:] != 'prev':
