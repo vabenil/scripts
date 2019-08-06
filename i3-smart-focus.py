@@ -206,14 +206,18 @@ def focus_right():
 def focus_down():
     if is_fullscreen:
         focus_fullscreen( forward=False )
-    else:
+    elif is_floating:
         i3.command('focus right')
+    else:
+        i3.command('focus down')
 
 def focus_up():
     if is_fullscreen:
         focus_fullscreen()
-    else:
+    elif is_floating:
         i3.command('focus left')
+    else:
+        i3.command('focus up')
 
 
 
