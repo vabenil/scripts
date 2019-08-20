@@ -1,58 +1,55 @@
 #!/usr/bin/python3.7
+import argparse
 
 """
-Scroll window title, requires i3 
+TODO:
+    add - flag to read from stdin
+"""
 
-Created to scroll window title in polybar.
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Simple text scroller")
 
-Usage example in a bash script:
-    for i in $(seq 1 100);
-    do
-        script.py 60 $i
-    done
+    required = parser.add_argument_group('required named arguments')
 
- """
+    required.add_argument('-m', '--maxlen', type=int, required=True, help="The amount of characters to show")
+    required.add_argument('-i', '--index', type=int, required=True, help="The first character index")
 
-import i3ipc
-import sys
+    exclusive_group = required.add_mutually_exclusive_group(required=True)
+
+    exclusive_group.add_argument('-t', '--text', type=str, help="The full text")
+    exclusive_group.add_argument('--read-from-stdin', action='store_true', help="The full text")
+
+    args = parser.parse_args()
 
 
-argc = len(sys.argv)
-args = sys.argv
+    maxlen = args.maxlen
+    indx = args.index
 
-usage = "Usage:\nscript.py <Max length> <N (First char index)>" 
-if argc < 3:
-    print( "Not enough arguments" )
-    print( usage )
-    exit( -1 )
+    if args.read_from_stdin:
+        from sys import stdin
 
-try:
-    max_len   = int( args[ 1 ] )
-    n         = int( args[ 2 ] )
-except ValueError:
-    print( "First and second arguments must be integers" ) 
-    exit ( -1 )
+        text = ''.join( [ line.rstrip() for line in stdin ] )
+    else:
+        text = args.text
 
-i3 = i3ipc.Connection()
-focused = i3.get_tree().find_focused()
+    text_len = len( text )
 
-title = focused.name
-title_len = len( title )
 
-if title_len <= max_len:
-    padding = round( 0.5 * ( max_len - title_len ) ) * ' '
-    print( "%s%s%s" % (padding, title, padding) )
-    exit()
+    if text_len <= maxlen:
+        padding = round( 0.5 * ( maxlen - text_len ) ) * ' '
+        print( "%s%s%s" % (padding, text, padding) )
+        exit()
 
-spacing = ' ' * max_len
-full_title = title + spacing
-full_len = title_len + max_len
+    spacing = ' ' * maxlen
 
-n = n if n < full_len else ( ( n % (full_len)) )
-last_indx = n + max_len 
+    full_text = text + spacing
+    full_len = text_len + maxlen
 
-full_title += full_title[ 0 : n ]
+    indx = indx if indx < full_len else ( ( indx % (full_len)) )
+    last_indx = indx + maxlen 
 
-screen_buffer = full_title[ n : last_indx]
+    full_text += text[ 0 : indx ]
 
-print( screen_buffer )
+    screen_buffer = full_text[ indx : last_indx]
+
+    print( screen_buffer )
