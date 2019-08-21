@@ -25,7 +25,6 @@ targets = [
     "float",
     "parent",
     "child",
-    "last"
 ]
 
 flags = [
@@ -40,7 +39,7 @@ flags = [
 ]
 
 usage = ("Usage:\nsmart-focus [flags] [target]\n"
-        "\nTarget:\n"
+        "\nTargets:\n"
         "    left\n"
         "    right\n"
         "    down\n"
@@ -48,7 +47,6 @@ usage = ("Usage:\nsmart-focus [flags] [target]\n"
         "    float\n"
         "    parent\n"
         "    child\n"
-        "    last\n"
         "\nFlags:\n"
         "    --help\n"
         "    --mark <mark>\n"
@@ -68,7 +66,7 @@ def save_to_reg( command ):
 
 def repeat_last():
     if not os.path.exists( REG_FILE_PATH ):
-        print( "file %s do not exist" )
+        print( "file %s do not exist", REG_FILE_PATH )
         exit( 1 )
 
     try:
@@ -178,9 +176,6 @@ def focus_parent():
 def focus_child():
     i3.command('focus child')
 
-def focus_last():
-    subprocess.run(['i3-focus-last', '--switch'])
-
 def focus_left():
     win_id = focused.window
     if is_fterm:
@@ -251,7 +246,7 @@ if __name__ == '__main__':
             target = sys.argv[1]
 
             if target not in targets:
-                print( "'%s' is not a valid target" )
+                print( "'%s' is not a valid target" % target )
                 print( usage )
                 exit( 1 )
     elif len(sys.argv) == 3:
@@ -301,8 +296,6 @@ if __name__ == '__main__':
             focus_parent()
         elif target == 'child':
             focus_child()
-        elif target == 'last':
-            focus_last()
         elif target == 'left':
             focus_left()
         elif target == 'right':
