@@ -5,6 +5,7 @@ import argparse
 import subprocess
 
 
+# File to save wallpapers
 BG_REG_FILE_PATH = "/tmp/current-bg"
 
 def save_bg( bg ):
@@ -40,12 +41,11 @@ def set_bg( bg_path ):
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser(description="Traverse wallpapers in directory")
 
-    group = parser.add_mutually_exclusive_group(required=False)
+    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-f', '--filename', type=str,
-            help="Set file as background, file path must be relative to the wallpaper-directory" )
+            help="Set file as background" )
     group.add_argument('dir', nargs='?',
             help="Wallpaper directory")
 
