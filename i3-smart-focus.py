@@ -25,7 +25,7 @@ targets = [
     "float",
     "parent",
     "child",
-]
+    ]
 
 flags = [
     'help',
@@ -33,10 +33,10 @@ flags = [
     'scratchpad-next',
     'fullscreen-next',
     'fullscreen-prev',
-     'mark',
+    'mark',
     'instance',
     'class'
-]
+    ]
 
 usage = ("Usage:\nsmart-focus [flags] [target]\n"
         "\nTargets:\n"
@@ -77,7 +77,7 @@ def repeat_last():
     else:
         last_fcommand = reg_file.read().split()
         reg_file.close()
-    
+
     print( last_fcommand )
     sys.argv = last_fcommand
     exec( open(I3_SMART_FOCUS).read() )
@@ -109,7 +109,7 @@ def scratchpad_next():
 # Focus the first window with x instance
 def focus_instance( instance ):
     wins = tree.find_instanced( instance )
-    
+
     if wins:
         if wins[0].parent.scratchpad_state != "none":
             command = "[instance=%s] scratchpad show" % instance
@@ -128,7 +128,7 @@ def focus_instance( instance ):
 
 
 def focus_marked( mark ):
-        marked_windows = tree.find_marked(mark)
+    marked_windows = tree.find_marked(mark)
 
         if not marked_windows:
             print( "No windows marked as %s" % mark )
@@ -152,7 +152,7 @@ def focus_fullscreen( forward=True ):
 
     if focused.id in windows:
         win_index = windows.index( focused.id )
-        
+
         if forward:
             next_win = windows[ win_index + 1 if win_index != win_num - 1 else 0 ]
         else:
