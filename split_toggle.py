@@ -6,7 +6,7 @@ focused = i3.get_tree().find_focused()
 
 layout = focused.parent.layout
 
-if layout == "splith":
+if   layout == "splith":
     i3.command("split v")
 elif layout == "splitv":
     i3.command("split h")

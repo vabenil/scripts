@@ -3,11 +3,11 @@ import re
 import subprocess
 
 """"
-Switch between layouts
+Switch between keyboard layouts
 """
 
 # Layouts to switch to
-layouts = [ "us", "ru" ]
+layouts = [ "us", "ru", "es" ]
 
 layout_query = subprocess.run(['setxkbmap', '-query'], stdout=subprocess.PIPE)\
         .stdout.decode('utf-8')
