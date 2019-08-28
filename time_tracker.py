@@ -16,7 +16,7 @@ class TimeTracker:
         self.focus_history = {}
 
         # Time in seconds to wait before a notification
-        self.delay = 5
+        self.delay = 300
 
         self.lfocused = None
         self.focused = self.i3.get_tree().find_focused()
