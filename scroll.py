@@ -2,8 +2,7 @@
 import argparse
 
 """
-TODO:
-    add - flag to read from stdin
+Simple text scroller
 """
 
 if __name__ == '__main__':
