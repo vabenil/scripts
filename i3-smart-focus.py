@@ -10,10 +10,6 @@ REG_FILE_PATH = '/tmp/i3-smart-focus-command-register'
 # REQUIRED
 # path to this script
 I3_SMART_FOCUS = os.path.abspath(__file__)
-# Keys to pass to xdotool to focus next|prev tabbed window.
-# If you don't use tabbed you can ignore it, or if you use tmux you could modify it to work with tmux.
-TABBED_FOCUS_NEXT = 'alt+n'
-TABBED_FOCUS_PREV = 'alt+p'
 
 targets = ('left', 'right', 'down', 'up')
 
@@ -128,11 +124,7 @@ def focus_fullscreen(forward=True):
         print("Unexpected error")
 
 def focus_left():
-    win_id = focused.window
-    if is_fterm:
-        import subprocess
-        subprocess.run(['xdotool', 'key', '-window', str(win_id), TABBED_FOCUS_PREV]) 
-    elif is_fullscreen:
+    if is_fullscreen:
         focus_fullscreen( forward=False )
     elif is_floating:
         i3.command('focus left')
@@ -140,11 +132,7 @@ def focus_left():
         i3.command('focus left')
 
 def focus_right():
-    win_id = focused.window
-    if is_fterm:
-        import subprocess
-        subprocess.run(['xdotool', 'key', '-window', str(win_id), TABBED_FOCUS_NEXT])
-    elif is_fullscreen:
+    if is_fullscreen:
         focus_fullscreen()
     elif is_floating:
         i3.command('focus right')
