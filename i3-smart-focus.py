@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
-""" Focus tiling container if window is floating and U is attempted """
-
 import i3ipc
 import sys
-import subprocess
+import argparse
 import os.path
 
-REG_FILE_PATH = '/tmp/focus-register'
+REG_FILE_PATH = '/tmp/i3-smart-focus-command-register'
 
 # REQUIRED
 # path to this script
@@ -17,44 +15,7 @@ I3_SMART_FOCUS = os.path.abspath(__file__)
 TABBED_FOCUS_NEXT = 'alt+n'
 TABBED_FOCUS_PREV = 'alt+p'
 
-targets = [
-        'left',
-        'right',
-        'down',
-        'up',
-        'float',
-        'parent',
-        'child',
-        ]
-
-flags = [
-        'help',
-        'repeat-last',
-        'scratchpad-next',
-        'fullscreen-next',
-        'fullscreen-prev',
-        'mark',
-        'instance',
-        'class'
-        ]
-
-usage = ('Usage:\nsmart-focus [flags] [target]\n'
-        '\nTargets:\n'
-        '    left\n'
-        '    right\n'
-        '    down\n'
-        '    up\n'
-        '    float\n'
-        '    parent\n'
-        '    child\n'
-        '\nFlags:\n'
-        '    --help\n'
-        '    --mark <mark>\n'
-        '    --scratchpad-next\n'
-        '    --fullscreen-next\n'
-        '    --fullscreen-prev\n'
-        '    --instance <instance>\n'
-        '    --class <class>')
+targets = ('left', 'right', 'down', 'up')
 
 def save_to_reg(command):
     try:
@@ -78,17 +39,12 @@ def repeat_last():
         last_fcommand = reg_file.read().split()
         reg_file.close()
 
-    print(last_fcommand)
+    # print(last_fcommand)
     sys.argv = last_fcommand
     exec(open(I3_SMART_FOCUS).read())
-    exit(0)
 
 
-def scratchpad_next():
-    # Hide window
-    if focused.parent.scratchpad_state != "none":
-        i3.command("[con_id=%d] scratchpad show" % focused.id)
-
+def scratchpad_next(save=False):
     scratch_windows = tree.scratchpad().leaves()
 
     if focused in scratch_windows:
@@ -96,7 +52,7 @@ def scratchpad_next():
     else:
         current_index = -1
 
-    next_win = scratch_windows[current_index - 1 if current_index != 0 else len(scratch_windows) - 1]
+    next_win = scratch_windows[current_index + 1 if current_index != 0 else len(scratch_windows) - 1]
 
     command = "[con_id=%d] scratchpad show" % next_win.id
 
@@ -104,10 +60,16 @@ def scratchpad_next():
         command += ", fullscreen toggle"
 
     i3.command(command)
-    save_to_reg( "%s --scratchpad-next" % I3_SMART_FOCUS )
+
+    # Hide previously focuse window
+    if focused.parent.scratchpad_state != "none":
+        i3.command("[con_id=%d] scratchpad show" % focused.id)
+
+    if save:
+        save_to_reg("%s --scratchpad-next" % I3_SMART_FOCUS)
 
 # Focus the first window with x instance
-def focus_instance(instance):
+def focus_instance(instance, save=True):
     wins = tree.find_instanced(instance)
 
     if wins:
@@ -120,14 +82,15 @@ def focus_instance(instance):
             command += ", fullscreen toggle"
 
         i3.command(command)
-        save_to_reg("%s --instance %s" % (I3_SMART_FOCUS, instance))
+        if save:
+            save_to_reg("%s --instance %s" % (I3_SMART_FOCUS, instance))
 
     else:
         print("Couldn't find any window instanced as %s" % instance)
         exit(1)
 
 
-def focus_marked(mark):
+def focus_marked(mark, save=True):
     marked_windows = tree.find_marked(mark)
 
     if not marked_windows:
@@ -143,7 +106,8 @@ def focus_marked(mark):
         command += ", fullscreen toggle"
 
     i3.command(command)
-    save_to_reg("%s --mark %s" % (I3_SMART_FOCUS, mark))
+    if save:
+        save_to_reg("%s --mark %s" % (I3_SMART_FOCUS, mark))
 
 def focus_fullscreen(forward=True):
     workspace = focused.workspace()
@@ -163,22 +127,10 @@ def focus_fullscreen(forward=True):
     else:
         print("Unexpected error")
 
-
-def focus_class():
-    pass
-
-def focus_floating():
-    i3.command('focus mode_toggle')
-
-def focus_parent():
-    i3.command('focus parent')
-
-def focus_child():
-    i3.command('focus child')
-
 def focus_left():
     win_id = focused.window
     if is_fterm:
+        import subprocess
         subprocess.run(['xdotool', 'key', '-window', str(win_id), TABBED_FOCUS_PREV]) 
     elif is_fullscreen:
         focus_fullscreen( forward=False )
@@ -190,7 +142,8 @@ def focus_left():
 def focus_right():
     win_id = focused.window
     if is_fterm:
-        subprocess.run(['xdotool', 'key', '-window', str(win_id), TABBED_FOCUS_NEXT]) 
+        import subprocess
+        subprocess.run(['xdotool', 'key', '-window', str(win_id), TABBED_FOCUS_NEXT])
     elif is_fullscreen:
         focus_fullscreen()
     elif is_floating:
@@ -215,56 +168,40 @@ def focus_up():
         i3.command('focus up')
 
 
-
 if __name__ == '__main__':
     # No need for the argparse library here
-    if len(sys.argv) < 2:
-        print("Not enough arguments")
-        print(usage)
-        exit()
-    elif len(sys.argv) == 2:
-        if sys.argv[1][0:2] == "--":
-            flag = sys.argv[1][2:]
-            target = ''
+    parser = argparse.ArgumentParser(prog="i3-smart-focus",
+                                     description="Smartly focus windows in i3")
+    parser.add_argument('--no-save', action='store_true',
+                        help="Do not save save %(prog)s command")
 
-            if flag not in flags:
-                print("'%s' is not a valid flag" % flag )
-                print(usage)
-                exit(1)
-            elif flag == 'help':
-                print(usage)
-                exit(0)
-            elif flag == 'repeat-last':
-                pass
-            elif flag[-4:] != 'next' and flag[-4:] != 'prev':
-                print("Not enough arguments")
-                print(usage)
-                exit(1)
-        else:
-            flag = ''
-            target = sys.argv[1]
+    exclusive_group = parser.add_mutually_exclusive_group(required=True)
+    exclusive_group.add_argument('-t', '--target', type=str,
+                                 choices=targets,
+                                 help="The TARGET to focus")
+    exclusive_group.add_argument('--repeat-last', action='store_true',
+                                 help="Repeat last %(prog)s command")
+    exclusive_group.add_argument('--scratchpad-next', action='store_true',
+                                 help="Focus next window in the scratchpad")
+    exclusive_group.add_argument('--scratchpad-prev', action='store_true',
+                                 help="Focus prev window in the scratchpad")
+    exclusive_group.add_argument('--fullscreen-next', action='store_true',
+                                 help="Focus next window without exiting\
+                                 fullscreen mode")
+    exclusive_group.add_argument('--fullscreen-prev', action='store_true',
+                                 help="Focus prev window without exiting\
+                                 fullscreen mode")
+    exclusive_group.add_argument('-m', '--mark', type=str,
+                                 help="Focus mark MARK")
+    exclusive_group.add_argument('-i', '--instance', type=str,
+                                 help="Focus instance INSTANCE")
+    exclusive_group.add_argument('-c', '--class', type=str,
+                                 help="Focus class CLASS")
+    exclusive_group.add_argument('--read-from-stdin', action='store_true',
+                                 help="The full text")
 
-            if target not in targets:
-                print("'%s' is not a valid target" % target)
-                print(usage)
-                exit(1)
-    elif len(sys.argv) == 3:
-        if sys.argv[1][0:2] == "--":
-            flag = sys.argv[1][2:]
-            target = sys.argv[2]
+    args = parser.parse_args()
 
-            if flag not in flags:
-                print( "'%s' is not a valid flag" % flag)
-                print( usage )
-                exit()
-        else:
-            print("flags must have '--' as prefix")
-            print(usage)
-            exit()
-    else:
-        print("To many arguments")
-        print(usage)
-        exit(1)
 
     i3 = i3ipc.Connection()
     tree = i3.get_tree()
@@ -275,33 +212,24 @@ if __name__ == '__main__':
     is_fterm = focused.window_class == "tabbed" and is_floating
     is_fullscreen = focused.fullscreen_mode
 
-    if flag:
-        if flag == "repeat-last":
-            repeat_last()
-        elif flag == "fullscreen-next":
-            focus_fullscreen()
-        elif flag == 'scratchpad-next':
-            scratchpad_next()
-        elif flag == 'mark':
-            focus_marked( target )
-        elif flag == 'instance':
-            focus_instance( target )
-        elif flag == 'class':
-            focus_class( target )
-    else:
-        if target == 'float':
-            focus_floating()
-        elif target == 'parent':
-            focus_parent()
-        elif target == 'child':
-            focus_child()
-        elif target == 'left':
+    if args.repeat_last:
+        repeat_last()
+        exit(0)
+
+    if args.scratchpad_next:
+        scratchpad_next(not args.no_save)
+    elif args.target != None:
+        if args.target == "left":
             focus_left()
-        elif target == 'right':
+        elif args.target == "right":
             focus_right()
-        elif target == 'down':
-            focus_down()
-        elif target == 'up':
+        elif args.target == "up":
             focus_up()
+        else:
+            focus_down()
+    elif args.instance != None:
+        focus_instance(args.instance, not args.no_save)
+    elif args.mark != None:
+        focus_marked(args.mark, not args.no_save)
 
 
