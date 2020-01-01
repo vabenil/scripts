@@ -42,13 +42,17 @@ def repeat_last():
 
 def scratchpad_next(save=False):
     scratch_windows = tree.scratchpad().leaves()
+    win_num = len(scratch_windows)
 
     if focused in scratch_windows:
         current_index = scratch_windows.index(focused)
     else:
         current_index = -1
 
-    next_win = scratch_windows[current_index + 1 if current_index != 0 else len(scratch_windows) - 1]
+    if win_num == 0:
+        return
+
+    next_win = scratch_windows[current_index + 1 if current_index != 0 else win_num - 1]
 
     command = "[con_id=%d] scratchpad show" % next_win.id
 
@@ -56,13 +60,45 @@ def scratchpad_next(save=False):
         command += ", fullscreen toggle"
 
     i3.command(command)
-
     # Hide previously focuse window
     if focused.parent.scratchpad_state != "none":
         i3.command("[con_id=%d] scratchpad show" % focused.id)
 
     if save:
         save_to_reg("%s --scratchpad-next" % I3_SMART_FOCUS)
+
+def focus_classed(win_class, forward=True, save=True):
+    wins = tree.find_classed(win_class)
+    win_num = len(wins)
+
+    if win_num == 0:
+        return
+
+    f_index = -1
+    if focused in wins:
+        f_index = wins.index(focused)
+
+    if forward:
+        next_index = f_index + 1 if f_index < win_num-1 else 0
+    else:
+        next_index = f_index - 1 if f_index > 0 else win_num
+
+    # print("window num: %d\nnext index: %d" % (win_num, next_index))
+    next_win = wins[next_index]
+    command = "[con_id=%d] focus" % next_win.id
+
+    if next_win.id == focused.id:
+        pass
+    elif focused.parent.scratchpad_state != "none"\
+    and next_win.parent.scratchpad_state != "none":
+        command += ", [con_id=%d] scratchpad show" % focused.id
+
+    if save:
+        save_to_reg("%s --classed %s" % (I3_SMART_FOCUS, win_class))
+
+    i3.command(command)
+
+
 
 # Focus the first window with x instance
 def focus_instance(instance, save=True):
@@ -125,7 +161,7 @@ def focus_fullscreen(forward=True):
 
 def focus_left():
     if is_fullscreen:
-        focus_fullscreen( forward=False )
+        focus_fullscreen(forward=False)
     elif is_floating:
         i3.command('focus left')
     else:
@@ -183,7 +219,7 @@ if __name__ == '__main__':
                                  help="Focus mark MARK")
     exclusive_group.add_argument('-i', '--instance', type=str,
                                  help="Focus instance INSTANCE")
-    exclusive_group.add_argument('-c', '--class', type=str,
+    exclusive_group.add_argument('-c', '--classed', type=str,
                                  help="Focus class CLASS")
     exclusive_group.add_argument('--read-from-stdin', action='store_true',
                                  help="The full text")
@@ -219,5 +255,7 @@ if __name__ == '__main__':
         focus_instance(args.instance, not args.no_save)
     elif args.mark != None:
         focus_marked(args.mark, not args.no_save)
+    elif args.classed != None:
+        focus_classed(args.classed, True, not args.no_save)
 
 
