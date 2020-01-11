@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-
 import i3ipc
 import sys
 import argparse
 import os.path
+
 
 REG_FILE_PATH = '/tmp/i3-smart-focus-command-register'
 
@@ -13,6 +13,7 @@ I3_SMART_FOCUS = os.path.abspath(__file__)
 
 targets = ('left', 'right', 'down', 'up')
 
+
 def save_to_reg(command):
     try:
         reg_file = open(REG_FILE_PATH, "w")
@@ -20,6 +21,7 @@ def save_to_reg(command):
         reg_file.close()
     except Exception:
         pass
+
 
 def repeat_last():
     if not os.path.exists(REG_FILE_PATH):
@@ -52,7 +54,8 @@ def scratchpad_next(save=False):
     if win_num == 0:
         return
 
-    next_win = scratch_windows[current_index + 1 if current_index != 0 else win_num - 1]
+    next_win = scratch_windows[current_index + 1
+                               if current_index != 0 else win_num - 1]
 
     command = "[con_id=%d] scratchpad show" % next_win.id
 
@@ -66,6 +69,7 @@ def scratchpad_next(save=False):
 
     if save:
         save_to_reg("%s --scratchpad-next" % I3_SMART_FOCUS)
+
 
 def focus_classed(win_class, forward=True, save=True):
     wins = tree.find_classed(win_class)
@@ -90,14 +94,13 @@ def focus_classed(win_class, forward=True, save=True):
     if next_win.id == focused.id:
         pass
     elif focused.parent.scratchpad_state != "none"\
-    and next_win.parent.scratchpad_state != "none":
+            and next_win.parent.scratchpad_state != "none":
         command += ", [con_id=%d] scratchpad show" % focused.id
 
     if save:
         save_to_reg("%s --classed %s" % (I3_SMART_FOCUS, win_class))
 
     i3.command(command)
-
 
 
 # Focus the first window with x instance
@@ -141,6 +144,7 @@ def focus_marked(mark, save=True):
     if save:
         save_to_reg("%s --mark %s" % (I3_SMART_FOCUS, mark))
 
+
 def focus_fullscreen(forward=True):
     workspace = focused.workspace()
     windows = sorted([win.id for win in workspace.leaves()])
@@ -159,6 +163,7 @@ def focus_fullscreen(forward=True):
     else:
         print("Unexpected error")
 
+
 def focus_left():
     if is_fullscreen:
         focus_fullscreen(forward=False)
@@ -166,6 +171,7 @@ def focus_left():
         i3.command('focus left')
     else:
         i3.command('focus left')
+
 
 def focus_right():
     if is_fullscreen:
@@ -175,6 +181,7 @@ def focus_right():
     else:
         i3.command('focus right')
 
+
 def focus_down():
     if is_fullscreen:
         focus_fullscreen(forward=False)
@@ -182,6 +189,7 @@ def focus_down():
         i3.command('focus right')
     else:
         i3.command('focus down')
+
 
 def focus_up():
     if is_fullscreen:
