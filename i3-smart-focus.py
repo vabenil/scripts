@@ -14,11 +14,6 @@ I3_SMART_FOCUS = os.path.abspath(__file__)
 targets = ('left', 'right', 'down', 'up')
 
 
-class Smart_Focus:
-    def __init__(self):
-        self.i3 = i3ipc.Connection(auto_reconnect=True)
-
-
 def save_to_reg(command):
     try:
         reg_file = open(REG_FILE_PATH, "w")
