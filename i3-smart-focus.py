@@ -14,6 +14,11 @@ I3_SMART_FOCUS = os.path.abspath(__file__)
 targets = ('left', 'right', 'down', 'up')
 
 
+class Smart_Focus:
+    def __init__(self):
+        self.i3 = i3ipc.Connection(auto_reconnect=True)
+
+
 def save_to_reg(command):
     try:
         reg_file = open(REG_FILE_PATH, "w")
@@ -46,13 +51,12 @@ def scratchpad_next(save=False):
     scratch_windows = tree.scratchpad().leaves()
     win_num = len(scratch_windows)
 
-    if focused in scratch_windows:
-        current_index = scratch_windows.index(focused)
-    else:
-        current_index = -1
-
     if win_num == 0:
         return
+
+    current_index = -1
+    if focused in scratch_windows:
+        current_index = scratch_windows.index(focused)
 
     next_win = scratch_windows[current_index + 1
                                if current_index != 0 else win_num - 1]
@@ -61,35 +65,36 @@ def scratchpad_next(save=False):
 
     if is_fullscreen and focused.type != 'workspace':
         command += ", fullscreen toggle"
+    # Hide previously focused window
+    if focused.parent.scratchpad_state != "none":
+        command += ", [con_id=%d] scratchpad show" % focused.id
 
     i3.command(command)
-    # Hide previously focuse window
-    if focused.parent.scratchpad_state != "none":
-        i3.command("[con_id=%d] scratchpad show" % focused.id)
 
     if save:
-        save_to_reg("%s --scratchpad-next" % I3_SMART_FOCUS)
+        save_to_reg(" ".join(sys.argv))
 
 
 def focus_classed(win_class, forward=True, save=True):
-    wins = tree.find_classed(win_class)
-    win_num = len(wins)
+    windows = tree.find_classed(win_class)
+    win_num = len(windows)
 
     if win_num == 0:
         return
 
-    f_index = -1
-    if focused in wins:
-        f_index = wins.index(focused)
+    f_index = windows.index(focused) if focused in windows else -1
 
     if forward:
         next_index = f_index + 1 if f_index < win_num-1 else 0
     else:
         next_index = f_index - 1 if f_index > 0 else win_num
 
-    # print("window num: %d\nnext index: %d" % (win_num, next_index))
-    next_win = wins[next_index]
-    command = "[con_id=%d] focus" % next_win.id
+    next_win = windows[next_index]
+    command = "[con_id=%d] %s" % (
+        next_win.id,
+        "scratchpad show" if next_win.parent.scratchpad_state != "none"
+        else "focus"
+    )
 
     if next_win.id == focused.id:
         pass
@@ -98,7 +103,7 @@ def focus_classed(win_class, forward=True, save=True):
         command += ", [con_id=%d] scratchpad show" % focused.id
 
     if save:
-        save_to_reg("%s --classed %s" % (I3_SMART_FOCUS, win_class))
+        save_to_reg(" ".join(sys.argv))
 
     i3.command(command)
 
@@ -116,9 +121,10 @@ def focus_instance(instance, save=True):
         if is_fullscreen and focused.type != 'workspace':
             command += ", fullscreen toggle"
 
-        i3.command(command)
         if save:
-            save_to_reg("%s --instance %s" % (I3_SMART_FOCUS, instance))
+            save_to_reg(" ".join(sys.argv))
+
+        i3.command(command)
 
     else:
         print("Couldn't find any window instanced as %s" % instance)
@@ -142,7 +148,7 @@ def focus_marked(mark, save=True):
 
     i3.command(command)
     if save:
-        save_to_reg("%s --mark %s" % (I3_SMART_FOCUS, mark))
+        save_to_reg(" ".join(sys.argv))
 
 
 def focus_fullscreen(forward=True):
@@ -150,18 +156,18 @@ def focus_fullscreen(forward=True):
     windows = sorted([win.id for win in workspace.leaves()])
     win_num = len(windows)
 
-    if focused.id in windows:
-        win_index = windows.index(focused.id)
+    if focused.id not in windows:
+        return
 
-        if forward:
-            next_win = windows[win_index + 1 if win_index != win_num - 1 else 0]
-        else:
-            next_win = windows[win_index - 1 if win_index != 0 else win_num - 1]
+    win_index = windows.index(focused.id)
 
-        command = "[con_id=%d] focus, fullscreen toggle" % next_win
-        i3.command(command)
+    if forward:
+        next_win = windows[win_index + 1 if win_index != win_num - 1 else 0]
     else:
-        print("Unexpected error")
+        next_win = windows[win_index - 1 if win_index != 0 else win_num - 1]
+
+    command = "[con_id=%d] focus, fullscreen toggle" % next_win
+    i3.command(command)
 
 
 def focus_left():
@@ -234,14 +240,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-
     i3 = i3ipc.Connection()
     tree = i3.get_tree()
     focused = tree.find_focused()
 
-    is_floating = focused.floating == "auto_on" or focused.floating == "user_on"
-    # If the windows if floating and using tabbed
-    is_fterm = focused.window_class == "tabbed" and is_floating
+    is_floating = focused.floating == "auto_on"\
+        or focused.floating == "user_on"
+
     is_fullscreen = focused.fullscreen_mode
 
     if args.repeat_last:
@@ -250,7 +255,7 @@ if __name__ == '__main__':
 
     if args.scratchpad_next:
         scratchpad_next(not args.no_save)
-    elif args.target != None:
+    elif args.target is not None:
         if args.target == "left":
             focus_left()
         elif args.target == "right":
@@ -259,11 +264,10 @@ if __name__ == '__main__':
             focus_up()
         else:
             focus_down()
-    elif args.instance != None:
+    elif args.instance is not None:
         focus_instance(args.instance, not args.no_save)
-    elif args.mark != None:
+    elif args.mark is not None:
         focus_marked(args.mark, not args.no_save)
-    elif args.classed != None:
+    elif args.classed is not None:
+        print(not args.no_save)
         focus_classed(args.classed, True, not args.no_save)
-
-
